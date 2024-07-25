@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Win2dCompareDirect2d (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Win2dCompareDirect2d (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

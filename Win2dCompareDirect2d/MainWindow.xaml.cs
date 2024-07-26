@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using ABI.Windows.System.RemoteSystems;
 using Microsoft.Graphics.Canvas;
@@ -6,6 +7,7 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using SharpGen.Runtime;
 using Vortice.Direct2D1;
 using Vortice.Direct3D;
@@ -57,6 +59,14 @@ namespace Win2dCompareDirect2d
             InitDirectX();
             CreateSwapChain(D2DPanel);
             SizeChanged += MainWindow_SizeChanged;
+            D2DPanel.CompositionScaleChanged += D2DPanel_CompositionScaleChanged;
+        }
+
+        private void D2DPanel_CompositionScaleChanged(SwapChainPanel sender, object args)
+        {
+            // var scale = 1/sender.CompositionScaleX;
+            // D2DPanel.RenderTransform= new ScaleTransform() { ScaleX = scale, ScaleY = scale };
+            // ResizeSwapChain((int)D2DPanel.ActualSize.X, (int)D2DPanel.ActualSize.Y);
         }
 
         private void Timer_Tick(object sender, object e)
@@ -87,15 +97,25 @@ namespace Win2dCompareDirect2d
 
         private void DrawD2DContent()
         {
-            D2dContext.BeginDraw();
+            float scaleFactor = (2f/3);
+
+            // ¥¥Ω®Àı∑≈æÿ’Û
+            Matrix3x2 scaleMatrix = Matrix3x2.CreateScale(scaleFactor, scaleFactor);
+
+            D2dContext.Dpi= new Size(144f, 144f);
+
+            // D2dContext.BeginDraw();
+            D2dContext.Transform = scaleMatrix;
+
             D2dContext.Clear(Colors.Transparent);
+            D2dContext.UnitMode = UnitMode.Dips;
 
             //sample drawing
-            D2dContext.AntialiasMode = AntialiasMode.Aliased;
+            // D2dContext.AntialiasMode = AntialiasMode.Aliased;
             var blackBrush = D2dContext.CreateSolidColorBrush(Colors.Black);
             var textbrush=D2dContext.CreateSolidColorBrush(Colors.White);
             // D2dContext.FillRectangle(new Rect(300f, 100f, 200f, 100f), blackBrush);
-            D2dContext.AntialiasMode = AntialiasMode.PerPrimitive;
+            // D2dContext.AntialiasMode = AntialiasMode.PerPrimitive;
             D2dContext.FillRectangle(new Rect(500f, 100f, 200f, 200f), blackBrush);
 
             var textFormat = D2DWriteFactory.CreateTextFormat("Arial", 25f);
@@ -105,11 +125,14 @@ namespace Win2dCompareDirect2d
             D2dContext.DrawTextLayout(new Vector2(200, 200), textLayout, textbrush);
 
             D2dContext.EndDraw();
+            // D2dContext.Dpi = new Size(144f, 144f);
+            // D2dContext.Transform = Matrix3x2.CreateScale(96f / 144f);
             SwapChain.Present(2, PresentFlags.None);
         }
 
         private void MainWindow_SizeChanged(object sender, Microsoft.UI.Xaml.WindowSizeChangedEventArgs args)
         {
+            // ResizeSwapChain((int)(D2DPanel.ActualSize.X*D2DPanel.CompositionScaleX),(int)(D2DPanel.CompositionScaleY*D2DPanel.ActualSize.Y));
 
             ResizeSwapChain((int)D2DPanel.ActualSize.X, (int)D2DPanel.ActualSize.Y);
         }
@@ -180,8 +203,8 @@ namespace Win2dCompareDirect2d
             SwapChainDescription1 swapChainDesc = new SwapChainDescription1()
             {
                 Stereo = false,
-                Width = (int)swapChainCanvas.Width,
-                Height = (int)swapChainCanvas.Height,
+                Width = (int)(swapChainCanvas.Width),
+                Height = (int)(swapChainCanvas.Height),
                 BufferCount = 2,
                 BufferUsage = Usage.RenderTargetOutput,
                 Format = Format.B8G8R8A8_UNorm,

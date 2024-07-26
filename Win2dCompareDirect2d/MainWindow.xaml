@@ -21,8 +21,8 @@
             <RowDefinition Height="400" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" BorderBrush="Aquamarine" BorderThickness="2">
-            <SwapChainPanel  x:Name="D2DPanel" Width="800" Height="400">
-                <TextBlock Text="Hello World" Margin="100" FontSize="25"></TextBlock>
+            <SwapChainPanel  x:Name="D2DPanel" Width="800" Height="400" >
+                <TextBlock Text="Hello World" Margin="100" FontSize="45" Foreground="Black"></TextBlock>
                 <Rectangle Width="100" Height="100" Fill="Black"></Rectangle>
             </SwapChainPanel>
         </Grid>

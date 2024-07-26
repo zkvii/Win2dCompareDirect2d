@@ -17,6 +17,7 @@ using Vortice.DXGI;
 using Vortice.Mathematics;
 using FactoryType = Vortice.Direct2D1.FactoryType;
 using FeatureLevel = Vortice.Direct3D.FeatureLevel;
+using Size = System.Drawing.Size;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,13 +27,16 @@ namespace Win2dCompareDirect2d
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainWindow 
+    public sealed partial class MainWindow
     {
-
         // private ID3D11DeviceContext deviceContext;
         public static IDXGIDevice DxgiDevice;
-        public static IDXGISwapChain1 SwapChain;
+
+        // public static IDXGISwapChain1 SwapChain;
+        public static IDXGISwapChain2 SwapChain;
+
         public static ID3D11Texture2D BackBuffer;
+
         // public static ID3D11RenderTargetView RenderTargetView;
 
         public static IDXGISurface DxgiBackBuffer;
@@ -51,7 +55,7 @@ namespace Win2dCompareDirect2d
         public MainWindow()
         {
             this.InitializeComponent();
-            hwnd=WinRT.Interop.WindowNative.GetWindowHandle(this);
+            hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
             _timer = new DispatcherTimer();
             _timer.Tick += Timer_Tick;
@@ -59,14 +63,7 @@ namespace Win2dCompareDirect2d
             InitDirectX();
             CreateSwapChain(D2DPanel);
             SizeChanged += MainWindow_SizeChanged;
-            D2DPanel.CompositionScaleChanged += D2DPanel_CompositionScaleChanged;
-        }
-
-        private void D2DPanel_CompositionScaleChanged(SwapChainPanel sender, object args)
-        {
-            // var scale = 1/sender.CompositionScaleX;
-            // D2DPanel.RenderTransform= new ScaleTransform() { ScaleX = scale, ScaleY = scale };
-            // ResizeSwapChain((int)D2DPanel.ActualSize.X, (int)D2DPanel.ActualSize.Y);
+            D2DPanel.CompositionScaleChanged+=D2DPanel_CompositionScaleChanged;
         }
 
         private void Timer_Tick(object sender, object e)
@@ -79,67 +76,54 @@ namespace Win2dCompareDirect2d
         {
             using var ds = args.DrawingSession;
 
-            var canvasTarget= new CanvasRenderTarget(sender, 500, 500);
+            var canvasTarget = new CanvasRenderTarget(sender, 500, 500);
             using var dds = canvasTarget.CreateDrawingSession();
             dds.Clear(Colors.Transparent);
             dds.FillRectangle(100, 100, 200, 200, Microsoft.UI.Colors.Black);
-            var textFormat= new Microsoft.Graphics.Canvas.Text.CanvasTextFormat()
+            var textFormat = new Microsoft.Graphics.Canvas.Text.CanvasTextFormat()
             {
                 FontSize = 25,
                 FontFamily = "Arial"
             };
 
-            var textLayout= new Microsoft.Graphics.Canvas.Text.CanvasTextLayout(ds, "Hello World", textFormat, 100, 100);
+            var textLayout =
+                new Microsoft.Graphics.Canvas.Text.CanvasTextLayout(ds, "Hello World", textFormat, 400, 100);
 
-            dds.DrawTextLayout(textLayout,new Vector2(100,100), Microsoft.UI.Colors.White);
+            dds.DrawTextLayout(textLayout, new Vector2(100, 100), Microsoft.UI.Colors.White);
             ds.DrawImage(canvasTarget);
         }
 
         private void DrawD2DContent()
         {
-            float scaleFactor = (2f/3);
-
-            // ¥¥Ω®Àı∑≈æÿ’Û
-            Matrix3x2 scaleMatrix = Matrix3x2.CreateScale(scaleFactor, scaleFactor);
-
-            D2dContext.Dpi= new Size(144f, 144f);
-
-            // D2dContext.BeginDraw();
-            D2dContext.Transform = scaleMatrix;
-
+            D2dContext.BeginDraw();
             D2dContext.Clear(Colors.Transparent);
-            D2dContext.UnitMode = UnitMode.Dips;
 
+            
             //sample drawing
-            // D2dContext.AntialiasMode = AntialiasMode.Aliased;
             var blackBrush = D2dContext.CreateSolidColorBrush(Colors.Black);
-            var textbrush=D2dContext.CreateSolidColorBrush(Colors.White);
+            var textbrush = D2dContext.CreateSolidColorBrush(Colors.White);
             // D2dContext.FillRectangle(new Rect(300f, 100f, 200f, 100f), blackBrush);
             // D2dContext.AntialiasMode = AntialiasMode.PerPrimitive;
             D2dContext.FillRectangle(new Rect(500f, 100f, 200f, 200f), blackBrush);
 
-            var textFormat = D2DWriteFactory.CreateTextFormat("Arial", 25f);
+            var textFormat = D2DWriteFactory.CreateTextFormat("Arial", 45f);
 
-            var textLayout = D2DWriteFactory.CreateTextLayout("Hello World", textFormat, 100f, 100f);
+            var textLayout = D2DWriteFactory.CreateTextLayout("Hello World", textFormat, 400f, 100f);
 
-            D2dContext.DrawTextLayout(new Vector2(200, 200), textLayout, textbrush);
+            D2dContext.DrawTextLayout(new Vector2(100, 200), textLayout, blackBrush);
 
             D2dContext.EndDraw();
-            // D2dContext.Dpi = new Size(144f, 144f);
-            // D2dContext.Transform = Matrix3x2.CreateScale(96f / 144f);
             SwapChain.Present(2, PresentFlags.None);
         }
 
         private void MainWindow_SizeChanged(object sender, Microsoft.UI.Xaml.WindowSizeChangedEventArgs args)
         {
-            // ResizeSwapChain((int)(D2DPanel.ActualSize.X*D2DPanel.CompositionScaleX),(int)(D2DPanel.CompositionScaleY*D2DPanel.ActualSize.Y));
 
             ResizeSwapChain((int)D2DPanel.ActualSize.X, (int)D2DPanel.ActualSize.Y);
         }
 
-    
 
-        public  void InitDirectX()
+        public void InitDirectX()
         {
             FeatureLevel[] featureLevels =
             [
@@ -165,10 +149,9 @@ namespace Win2dCompareDirect2d
             D3Ddevice = tempDevice;
             // deviceContext = tempContext;
             DxgiDevice = D3Ddevice.QueryInterface<IDXGIDevice>();
-
         }
 
-        public  void ResizeSwapChain(int width, int height)
+        public void ResizeSwapChain(int width, int height)
         {
             D2dContext.Target = null;
             // renderTargetView.Dispose();
@@ -185,16 +168,13 @@ namespace Win2dCompareDirect2d
             bitmapProperties.PixelFormat.Format = Format.B8G8R8A8_UNorm;
             bitmapProperties.PixelFormat.AlphaMode = Vortice.DCommon.AlphaMode.Premultiplied;
             bitmapProperties.BitmapOptions = BitmapOptions.Target | BitmapOptions.CannotDraw;
-            uint nDPI = Win32Helpers.GetDpiForWindow(hwnd);
-            bitmapProperties.DpiX = nDPI;
-            bitmapProperties.DpiY = nDPI;
             // bitmapProperties.DpiX = 96;
             // bitmapProperties.DpiY = 96;
             D2dTargetBitmap1 = D2dContext.CreateBitmapFromDxgiSurface(DxgiBackBuffer, bitmapProperties);
             D2dContext.Target = D2dTargetBitmap1;
         }
 
-        public  void CreateSwapChain(SwapChainPanel swapChainCanvas)
+        public void CreateSwapChain(SwapChainPanel swapChainCanvas)
         {
             ComObject comObject = new ComObject(swapChainCanvas);
             SwapChainPanel = comObject.QueryInterfaceOrNull<Vortice.WinUI.ISwapChainPanelNative>();
@@ -210,7 +190,7 @@ namespace Win2dCompareDirect2d
                 Format = Format.B8G8R8A8_UNorm,
                 SampleDescription = new SampleDescription(1, 0),
                 Scaling = Scaling.Stretch,
-                AlphaMode = AlphaMode.Premultiplied,
+                AlphaMode = AlphaMode.Unspecified,
                 Flags = SwapChainFlags.None,
                 SwapEffect = SwapEffect.FlipSequential
             };
@@ -219,10 +199,17 @@ namespace Win2dCompareDirect2d
             IDXGIFactory2 dxgiFactory2 = dxgiAdapter.GetParent<IDXGIFactory2>();
 
             // resize window flick bug
-            SwapChain = dxgiFactory2.CreateSwapChainForComposition(D3Ddevice, swapChainDesc);
+            var SwapChain1 = dxgiFactory2.CreateSwapChainForComposition(D3Ddevice, swapChainDesc);
+
+            SwapChain = SwapChain1.QueryInterface<IDXGISwapChain2>();
+
+            // var scaleX=2.4f/swapChainCanvas.CompositionScaleX;
+            // var scaleY=2.4f/swapChainCanvas.CompositionScaleY;
+
+            // SwapChain.MatrixTransform=Matrix3x2.CreateScale(scaleX,scaleY);
 
             BackBuffer = SwapChain.GetBuffer<ID3D11Texture2D>(0);
-            // renderTargetView = device.CreateRenderTargetView(backBuffer);
+
             DxgiBackBuffer = BackBuffer.QueryInterface<IDXGISurface>();
             if (SwapChainPanel != null) SwapChainPanel.SetSwapChain(SwapChain);
 
@@ -235,12 +222,13 @@ namespace Win2dCompareDirect2d
             bitmapProperties.PixelFormat.Format = Format.B8G8R8A8_UNorm;
             bitmapProperties.PixelFormat.AlphaMode = Vortice.DCommon.AlphaMode.Premultiplied;
             bitmapProperties.BitmapOptions = BitmapOptions.Target | BitmapOptions.CannotDraw;
-            uint nDPI = Win32Helpers.GetDpiForWindow(hwnd);
-            bitmapProperties.DpiX = nDPI;
-            bitmapProperties.DpiY = nDPI;
+            // uint nDPI = Win32Helpers.GetDpiForWindow(hwnd);
+            // bitmapProperties.DpiX = nDPI;
+            // bitmapProperties.DpiY = nDPI;
             // bitmapProperties.DpiX = 144;
             // bitmapProperties.DpiY = 144;
             D2dTargetBitmap1 = D2dContext.CreateBitmapFromDxgiSurface(DxgiBackBuffer, bitmapProperties);
+                                
             D2dContext.Target = D2dTargetBitmap1;
 
             DxgiDevice.Dispose();

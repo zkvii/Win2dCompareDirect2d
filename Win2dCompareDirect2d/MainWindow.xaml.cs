@@ -62,8 +62,32 @@ namespace Win2dCompareDirect2d
             _timer.Interval = TimeSpan.FromMilliseconds(10D);
             InitDirectX();
             CreateSwapChain(D2DPanel);
-            SizeChanged += MainWindow_SizeChanged;
+            SwContainer.SizeChanged += SwSize_Changed;
             D2DPanel.CompositionScaleChanged+=D2DPanel_CompositionScaleChanged;
+        }
+
+        private void SwSize_Changed(object sender, SizeChangedEventArgs e)
+        {
+            D2DPanel.Width=e.NewSize.Width * 1.5;
+            D2DPanel.Height=e.NewSize.Height * 1.5;
+            ResizeSwapChain((int)(e.NewSize.Width * 1.5),(int)(e.NewSize.Height*1.5));
+            Debug.WriteLine($"PanelSize_Changed:{e.NewSize}");
+
+        }
+
+     
+
+        private void D2DPanel_CompositionScaleChanged(SwapChainPanel sender, object args)
+        {
+            var nDpi=Win32Helpers.GetDpiForWindow(hwnd);
+            double nScaleX = 96.0f / (double)nDpi;
+            double nScaleY = 96.0f / (double)nDpi;
+            D2DPanel.RenderTransform = new ScaleTransform()
+            {
+                ScaleX = nScaleX,
+                ScaleY = nScaleY
+            };
+
         }
 
         private void Timer_Tick(object sender, object e)
@@ -96,7 +120,7 @@ namespace Win2dCompareDirect2d
         private void DrawD2DContent()
         {
             D2dContext.BeginDraw();
-            D2dContext.Clear(Colors.Transparent);
+            D2dContext.Clear(Colors.Aquamarine);
 
             
             //sample drawing
@@ -108,15 +132,15 @@ namespace Win2dCompareDirect2d
 
             var textFormat = D2DWriteFactory.CreateTextFormat("Arial", 45f);
 
-            var textLayout = D2DWriteFactory.CreateTextLayout("Hello World", textFormat, 400f, 100f);
+            var textLayout = D2DWriteFactory.CreateTextLayout("Hello Worldw", textFormat, 400f, 100f);
 
-            D2dContext.DrawTextLayout(new Vector2(100, 200), textLayout, blackBrush);
+            D2dContext.DrawTextLayout(new Vector2(100, 200), textLayout, textbrush);
 
             D2dContext.EndDraw();
             SwapChain.Present(2, PresentFlags.None);
         }
 
-        private void MainWindow_SizeChanged(object sender, Microsoft.UI.Xaml.WindowSizeChangedEventArgs args)
+        private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
 
             ResizeSwapChain((int)D2DPanel.ActualSize.X, (int)D2DPanel.ActualSize.Y);
